@@ -728,7 +728,7 @@
            _let (list (list v x))
            (cond
             ((identifier? p)
-             (if (any (lambda (l) (compare p l)) lits)
+             (if (any (lambda (l) (eq? p l)) lits)
                  (list _and
                        (list _compare v (list _rename (list _quote p)))
                        (k vars))
@@ -829,7 +829,7 @@
     (define (all-vars x dim)
       (let lp ((x x) (dim dim) (vars '()))
         (cond ((identifier? x)
-               (if (or (any (lambda (lit) (compare x lit)) lits)
+               (if (or (any (lambda (lit) (eq? x lit)) lits)
                        (compare x _underscore))
                    vars
                    (cons (cons x dim) vars)))
