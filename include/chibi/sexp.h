@@ -491,10 +491,10 @@ struct sexp_struct {
     struct {
       char flags;
       sexp_proc_num_args_t num_args;
-      sexp bc, vars;
+      sexp bc, vars, aux;
     } procedure;
     struct {
-      sexp proc, env, source;
+      sexp proc, env, source, aux;
     } macro;
     struct {
       sexp env, free_vars, expr;
@@ -1036,6 +1036,7 @@ SEXP_API sexp sexp_make_unsigned_integer(sexp ctx, sexp_luint_t x);
 #define sexp_procedure_unused_rest_p(x) (sexp_unbox_fixnum(sexp_procedure_flags(x)) & SEXP_PROC_UNUSED_REST)
 #define sexp_procedure_code(x)       (sexp_field(x, procedure, SEXP_PROCEDURE, bc))
 #define sexp_procedure_vars(x)       (sexp_field(x, procedure, SEXP_PROCEDURE, vars))
+#define sexp_procedure_aux(x)        (sexp_field(x, procedure, SEXP_PROCEDURE, aux))
 #define sexp_procedure_source(x)     sexp_bytecode_source(sexp_procedure_code(x))
 
 #define sexp_bytes_length(x)  (sexp_field(x, bytes, SEXP_BYTES, length))
@@ -1133,6 +1134,7 @@ SEXP_API sexp sexp_make_unsigned_integer(sexp ctx, sexp_luint_t x);
 #define sexp_macro_proc(x)        (sexp_field(x, macro, SEXP_MACRO, proc))
 #define sexp_macro_env(x)         (sexp_field(x, macro, SEXP_MACRO, env))
 #define sexp_macro_source(x)      (sexp_field(x, macro, SEXP_MACRO, source))
+#define sexp_macro_aux(x)         (sexp_field(x, macro, SEXP_MACRO, aux))
 
 #define sexp_synclo_env(x)        (sexp_field(x, synclo, SEXP_SYNCLO, env))
 #define sexp_synclo_free_vars(x)  (sexp_field(x, synclo, SEXP_SYNCLO, free_vars))

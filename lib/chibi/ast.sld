@@ -26,9 +26,9 @@
    exception-kind exception-message exception-irritants exception-source
    opcode-name opcode-num-params opcode-return-type opcode-param-type
    opcode-class opcode-code opcode-data opcode-variadic?
-   macro-procedure macro-env macro-source
+   macro-procedure macro-env macro-source macro-aux macro-aux-set!
    procedure-code procedure-vars procedure-name procedure-name-set!
-   procedure-arity procedure-variadic? procedure-flags
+   procedure-arity procedure-variadic? procedure-flags procedure-aux procedure-aux-set!
    bytecode-name bytecode-literals bytecode-source
    port-line port-line-set!
    extend-env env-parent env-parent-set! env-lambda env-lambda-set!

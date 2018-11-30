@@ -377,6 +377,7 @@ sexp sexp_make_procedure_op (sexp ctx, sexp self, sexp_sint_t n, sexp flags,
   sexp_procedure_num_args(proc) = sexp_unbox_fixnum(num_args);
   sexp_procedure_code(proc) = bc;
   sexp_procedure_vars(proc) = vars;
+  sexp_procedure_aux(proc) = SEXP_FALSE;
   return proc;
 }
 
@@ -384,6 +385,7 @@ static sexp sexp_make_macro (sexp ctx, sexp p, sexp e) {
   sexp mac = sexp_alloc_type(ctx, macro, SEXP_MACRO);
   sexp_macro_env(mac) = e;
   sexp_macro_proc(mac) = p;
+  sexp_macro_aux(mac) = SEXP_FALSE;
   return mac;
 }
 
