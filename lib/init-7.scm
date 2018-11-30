@@ -98,6 +98,8 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; syntax
 
+(current-renamer (lambda (x) x))
+
 (define close-syntax
   (lambda (form env)
     (make-syntactic-closure env '() form)))
@@ -146,9 +148,11 @@
 
 (define free-identifier=?
   (lambda (x y)
-    ((lambda (use-env)
-       (identifier=? use-env x use-env y))
-     (current-usage-environment))))
+    ((lambda (use-env cur-env)
+       (identifier=? (if use-env use-env cur-env) x
+		     (if use-env use-env cur-env) y))
+     (current-usage-environment)
+     (current-environment))))
 
 (define sc-macro-transformer
   (lambda (f)

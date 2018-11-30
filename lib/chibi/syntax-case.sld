@@ -1,9 +1,11 @@
 (define-library (chibi syntax-case)
-  (export ... _ free-identifier=? bound-identifier=?
-	  syntax-case syntax with-syntax)
+  (export ... _ free-identifier=? bound-identifier=? identifier?
+	  syntax-case syntax quasisyntax unsyntax unsyntax-splicing
+	  datum->syntax syntax->datum
+	  generate-temporaries with-syntax syntax-violation)
   (import (chibi)
 	  (chibi ast)
-	  (srfi 8)
-	  (srfi 9)
+	  (meta)
+	  (srfi 1)
 	  (srfi 11))
   (include "syntax-case.scm"))

@@ -72,7 +72,7 @@ sexp sexp_get_env_cell (sexp ctx, sexp self, sexp_sint_t n, sexp env, sexp id, s
       id = sexp_synclo_expr(id);
     }
     cell = sexp_env_cell(ctx, env, id, 0);
-    if (!cell && createp)
+    if (!cell && sexp_truep(createp))
       cell = sexp_env_cell_define(ctx, env, id, SEXP_UNDEF, NULL);
   }
   return cell ? cell : SEXP_FALSE;

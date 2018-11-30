@@ -465,6 +465,10 @@ void sexp_init_context_globals (sexp ctx) {
   sexp_global(ctx, SEXP_G_QUASIQUOTE_SYMBOL) = sexp_intern(ctx, "quasiquote", -1);
   sexp_global(ctx, SEXP_G_UNQUOTE_SYMBOL) = sexp_intern(ctx, "unquote", -1);
   sexp_global(ctx, SEXP_G_UNQUOTE_SPLICING_SYMBOL) = sexp_intern(ctx, "unquote-splicing", -1);
+  sexp_global(ctx, SEXP_G_SYNTAX_SYMBOL) = sexp_intern(ctx, "syntax", -1);
+  sexp_global(ctx, SEXP_G_QUASISYNTAX_SYMBOL) = sexp_intern(ctx, "quasisyntax", -1);
+  sexp_global(ctx, SEXP_G_UNSYNTAX_SYMBOL) = sexp_intern(ctx, "unsyntax", -1);
+  sexp_global(ctx, SEXP_G_UNSYNTAX_SPLICING_SYMBOL) = sexp_intern(ctx, "unsyntax-splicing", -1);
   sexp_global(ctx, SEXP_G_CUR_IN_SYMBOL) = sexp_intern(ctx, "current-input-port", -1);
   sexp_global(ctx, SEXP_G_CUR_OUT_SYMBOL) = sexp_intern(ctx, "current-output-port", -1);
   sexp_global(ctx, SEXP_G_CUR_ERR_SYMBOL) = sexp_intern(ctx, "current-error-port", -1);
@@ -3164,6 +3168,28 @@ sexp sexp_read_raw (sexp ctx, sexp in, sexp *shares) {
         }
       } else {
         res = sexp_list_to_vector(ctx, res);
+      }
+      break;
+    case '\'':
+      res = sexp_read_one(ctx, in, shares);
+      if (! sexp_exceptionp(res))
+	res = sexp_list2(ctx, sexp_global(ctx, SEXP_G_SYNTAX_SYMBOL), res);
+      break;
+    case '`':
+      res = sexp_read_one(ctx, in, shares);
+      if (! sexp_exceptionp(res))
+	res = sexp_list2(ctx, sexp_global(ctx, SEXP_G_QUASISYNTAX_SYMBOL), res);
+      break;
+    case ',':
+      if ((c1 = sexp_read_char(ctx, in)) == '@') {
+	res = sexp_read_one(ctx, in, shares);
+	if (! sexp_exceptionp(res))
+	  res = sexp_list2(ctx, sexp_global(ctx, SEXP_G_UNSYNTAX_SPLICING_SYMBOL), res);
+      } else {
+	sexp_push_char(ctx, c1, in);
+	res = sexp_read_one(ctx, in, shares);
+	if (! sexp_exceptionp(res))
+	  res = sexp_list2(ctx, sexp_global(ctx, SEXP_G_UNSYNTAX_SYMBOL), res);
       }
       break;
     default:
