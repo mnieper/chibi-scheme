@@ -1,3 +1,14 @@
+;; Written by Marc Nieper-Wißkirchen
+
+;; TODO: make-variable-transformer and identifier-syntax.
+
+;; TODO: make-synthetic-identifier should return a truly unique (that
+;; is not free-identifier=? to any other) identifier.
+
+;; TODO: Consecutive ellipses in syntax templates.
+
+;; TODO: Write many more tests.
+
 (define-syntax define-pattern-variable
   (er-macro-transformer
    (lambda (expr rename compare)
@@ -20,6 +31,10 @@
 
 (define (ellipsis? id)
   (free-identifier=? id (rename '...)))
+
+(define bound-identifier=?
+  (lambda (x y)
+    (eq? x y)))
 
 (define (syntax-transformer level)
   (er-macro-transformer
@@ -165,20 +180,38 @@
 
 (define (gen-matcher e lit* pattern vars)
   (cond ((pair? pattern)
-	 (let ((e1 (car (generate-temporaries '(#f))))
-	       (e2 (car (generate-temporaries '(#f)))))
-	   (let*-values (((car-matcher vars)
-			  (gen-matcher e1 lit* (car pattern) vars))
-			 ((cdr-matcher vars)
-			  (gen-matcher e2 lit* (cdr pattern) vars)))
-	     (values (lambda (k)
-		       #`(if (pair? #,e)
-			     (let ((#,e1 (car #,e))
-				   (#,e2 (cdr #,e)))
-			       #,(car-matcher (lambda ()
-						(cdr-matcher k))))
-			     (fail)))
-		     vars))))
+	 (cond
+	  ((and (pair? (cdr pattern))
+		(identifier? (cadr pattern))
+		(ellipsis? (cadr pattern)))
+	   (let* ((l (length+ (cddr pattern)))
+		  (h (car (generate-temporaries '(#f))))
+		  (t (car (generate-temporaries '(#f)))))
+	     (let*-values (((head-matcher vars) (gen-map h lit* (car pattern) vars))
+			   ((tail-matcher vars) (gen-matcher* t lit* (cddr pattern) vars)))
+	       (values (lambda (k)
+			 #`(let ((n (length+ #,e)))
+			     (if (and n (>= n #,l))
+				 (let*-values (((#,h #,t) (split-at #,e (- n #,l))))
+				   #,(head-matcher (lambda ()
+						     (tail-matcher k))))
+				 (fail))))
+		       vars))))
+	  (else
+	   (let ((e1 (car (generate-temporaries '(#f))))
+		 (e2 (car (generate-temporaries '(#f)))))
+	     (let*-values (((car-matcher vars)
+			    (gen-matcher e1 lit* (car pattern) vars))
+			   ((cdr-matcher vars)
+			    (gen-matcher e2 lit* (cdr pattern) vars)))
+	       (values (lambda (k)
+			 #`(if (pair? #,e)
+			       (let ((#,e1 (car #,e))
+				     (#,e2 (cdr #,e)))
+				 #,(car-matcher (lambda ()
+						  (cdr-matcher k))))
+			       (fail)))
+		       vars))))))
         ((identifier? pattern)
 	 (cond ((member pattern lit* free-identifier=?)
 		(values (lambda (k)
@@ -200,34 +233,69 @@
 	 (values (lambda (k)
 		   #`(if (equal? (syntax->datum #,e) '#,pattern)
 			 #,(k)
-			 (fail)))))))
+			 (fail)))
+		 vars))))
+
+(define (gen-map h lit* pattern vars)
+  (let*-values (((matcher inner-vars) (gen-matcher #'g lit* pattern '())))
+    (let ((loop (car (generate-temporaries '(#f))))
+	  (g* (generate-temporaries inner-vars)))
+      (values (lambda (k)
+		#`(let #,loop ((#,h (reverse #,h))
+			       #,@(map (lambda (g)
+					 #`(#,g '()))
+				       g*))
+		       (if (null? #,h)
+			   #,(k)
+			   (let ((g (car #,h)))
+			     #,(matcher (lambda ()
+					  #`(#,loop (cdr #,h)
+						    #,@(map (lambda (var g)
+							      #`(cons #,(cadr var) #,g))
+							    inner-vars g*))))))))
+	      (fold (lambda (g var vars)
+		      (alist-cons (car var) (list g (+ (cadr (cdr var)) 1)) vars))
+		    vars g* inner-vars)))))
+
+(define (gen-matcher* e lit* pattern* vars)
+  (let loop ((e e) (pattern* pattern*) (vars vars))
+    (cond ((null? pattern*)
+	   (values (lambda (k)
+		     #`(if (null? #,e)
+			   #,(k)
+			   (fail)))
+		   vars))
+	  ((pair? pattern*)
+	   (let ((e1 (car (generate-temporaries '(#f))))
+		 (e2 (car (generate-temporaries '(#f)))))
+	     (let*-values (((car-matcher vars)
+			    (gen-matcher e1 lit* (car pattern*) vars))
+			   ((cdr-matcher vars)
+			    (loop e2 (cdr pattern*) vars)))
+	       (values (lambda (k)
+			 #`(let ((#,e1 (car #,e))
+				 (#,e2 (cdr #,e)))
+			     #,(car-matcher (lambda ()
+					      (cdr-matcher k)))))
+		       vars))))
+	  (else
+	   (gen-matcher e lit* pattern* vars)))))
+
+(define (make-synthetic-identifier id)
+  (close-syntax id (environment)))
 
 (define (generate-temporaries l)
-  (map (lambda (x)
-	 (close-syntax 't (environment)))
-       l))
+  (map (lambda (x) (make-synthetic-identifier 't)) l))
 
-;; (define-syntax with-syntax
-;;   (lambda (x)
-;;     (syntax-case x ()
-;;       ((_ ((p e0) ...) e1 e2 ...)
-;;        #'(syntax-case (list e0 ...) ()
-;; 	   ((p ...) (let () e1 e2 ...)))))))
+(define-syntax with-syntax
+  (lambda (x)
+    (syntax-case x ()
+      ((_ ((p e0) ...) e1 e2 ...)
+       #'(syntax-case (list e0 ...) ()
+	   ((p ...) (let () e1 e2 ...)))))))
 
 (define (syntax-violation who message . form*)
   (apply error message form*))
 
 
-
-;; (define-syntax x (make-pattern-variable 'x))
-;; (define-pattern-variable x e 1)
-
-;; (define bar 'org)
-
-;; (define-syntax foo
-;;   (er-macro-transformer
-;;    (lambda (expr rename compare)
-;;      (list 'quote #'xxx))))
-
-;; (display (foo + 1 2))
-;; (newline)
+;; TODO: Move datum->syntax from init-7 here.

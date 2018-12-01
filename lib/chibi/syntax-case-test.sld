@@ -27,4 +27,24 @@
 	      ((b . y) #f)
 	      ((x . b) #'x)))
 
+      (test "syntax-case simple ellipsis"
+	    '(a b c)
+	    (syntax-case '(a b c) ()
+	      ((a ...) #'(a ...))))
+
+      (test "syntax-case ellipsis with tail"
+	    '(a b x c)
+	    (syntax-case '(a b c) ()
+	      ((a ... b) #'(a ... x b))))
+
+      (test "syntax-case ellipsis with dotted tail"
+	    '(a b x c y d)
+	    (syntax-case '(a b c . d) ()
+	      ((a ... b . c) #'(a ... x b y c))))
+
+      (test "syntax-case nested ellipsis"
+	    '((a b) (d e) c f)
+	    (syntax-case '((a b c) (d e f)) ()
+	      (((x ... y) ...) #'((x ...) ... y ...))))
+
       (test-end))))

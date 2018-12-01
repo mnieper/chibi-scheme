@@ -142,10 +142,6 @@
 	  (list (close-syntax 'make-transformer mac-env)
 		(car (cddr expr))))))
 
-(define bound-identifier=?
-  (lambda (x y)
-    (eq? x y)))
-
 (define free-identifier=?
   (lambda (x y)
     ((lambda (use-env cur-env)
